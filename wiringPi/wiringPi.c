@@ -210,7 +210,7 @@ const char *piModelNames [8] =
   "Model B+",
   "Compute Module",
   "Model A+",
-  "ODROID-C",
+  "ODROID-C1/C1+",
   "ODROID-XU3/4",
 } ;
 
@@ -1030,9 +1030,9 @@ int wiringPiFailure (int fatal, const char *message, ...)
  *	0012 - Model A+  Rev 1.2, 256MB, Sony
  *
  *  added :
- *  000c - Model ODROID C, Rev 1.0, 1024M, Hardkernel
+ *  000a - Model ODROID C1/C1+, Rev 1.0, 1024M, Hardkernel
  *  added :
- *  0000 - Model ODROID XU3/4, Rev 1.0, 2048M, Hardkernel
+ *  0100 - Model ODROID XU3/4, Rev 1.0, 2048M, Hardkernel
  *
  *	A small thorn is the olde style overvolting - that will add in
  *		1000000
@@ -1115,7 +1115,7 @@ int piBoardRev (void)
     printf ("piboardRev: last4Chars are: \"%s\"\n", c) ;
 
   if ( (strcmp (c, "0002") == 0) || (strcmp (c, "0003") == 0) ||
-       (strcmp (c, "000c") == 0) || (strcmp (c, "0000") == 0) )
+       (strcmp (c, "000a") == 0) || (strcmp (c, "0100") == 0) )
     boardRev = 1;
   else
     boardRev = 2;
@@ -1202,7 +1202,7 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *overVolted)
   else if (strcmp (c, "000a") == 0) {
     *model = PI_MODEL_ODROIDC;  *rev = PI_VERSION_1;  *mem = 1024;  *maker = PI_MAKER_HARDKERNEL;
   }
-  else if (strcmp (c, "0000") == 0) {
+  else if (strcmp (c, "0100") == 0) {
     *model = PI_MODEL_ODROIDXU_34;  *rev = PI_VERSION_1;  *mem = 2048;  *maker = PI_MAKER_HARDKERNEL;
   }
   else  {

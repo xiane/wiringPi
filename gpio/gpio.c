@@ -209,28 +209,104 @@ static void doLoad (int argc, char *argv [])
   else
     _doLoadUsage (argv) ;
 
-  if (!moduleLoaded (module1))
-  {
-    sprintf (cmd, "modprobe %s%s", module1, args1) ;
-    system (cmd) ;
+  if (piModel == PI_MODEL_ODROIDC || piModel == PI_MODEL_ODROIDXU_34)  {
+    if (strcasecmp (argv [2], "i2c") == 0)  {
+      if (piModel == PI_MODEL_ODROIDC)  {
+        module1 = "aml-i2c";
+        file1 = "/dev/i2c-1";
+
+        if (!moduleLoaded(module1))  {
+          sprintf (cmd, "modprobe %s", module1) ;
+          system (cmd) ;
+        }
+      }
+      else
+        file1 = "/dev/i2c-3";
+
+      sleep (1) ;	// To let things get settled
+      changeOwner (argv [0], file1) ;
+    }
+    else  {
+      if (piModel == PI_MODEL_ODROIDC)  {
+        file1 = "/dev/spidev0.0";
+        module1 = "spidev";
+        module2 = "spicc";
+        if (!moduleLoaded(module1))  {
+          sprintf (cmd, "modprobe %s%s", module1, args1) ;
+          system (cmd) ;
+        }
+        if (!moduleLoaded(module2))  {
+          sprintf (cmd, "modprobe %s", module2) ;
+          system (cmd) ;
+        }
+        if (!moduleLoaded (module2))
+        {
+          fprintf (stderr, "%s: Unable to load %s\n", argv [0], module2) ;
+          exit (1) ;
+        }
+
+        sleep (1) ;	// To let things get settled
+        changeOwner (argv [0], file1) ;
+      }
+      else {
+        module1 = "spidev";
+        file1 = "/dev/spidev1.0";
+
+        if (!moduleLoaded (module1))
+        {
+          fprintf (stderr, "%s: Unable to load %s\n", argv [0], module1) ;
+          fprintf (stderr, "\nYou need modified dtb file for spidev.\n");
+          fprintf (stderr, "\nstep 1)\n");
+          fprintf (stderr, "  - install device-tree-compiler.\n");
+          fprintf (stderr, "    sudo apt-get install device-tree-compiler\n");
+          fprintf (stderr, "\nstep 2)\n");
+          fprintf (stderr, "  - modified dtb file.\n");
+          fprintf (stderr, "    sudo -s\n");
+          fprintf (stderr, "    fdtput -c /media/boot/exynos5422-odroidxu3.dtb /spi@12d30000/spidev\n");
+          fprintf (stderr, "    fdtput -t s /media/boot/exynos5422-odroidxu3.dtb /spi@12d30000/spidev compatible \"spidev\"\n");
+          fprintf (stderr, "    fdtput -t x /media/boot/exynos5422-odroidxu3.dtb /spi@12d30000/spidev reg 0\n");
+          fprintf (stderr, "    fdtput -t i /media/boot/exynos5422-odroidxu3.dtb /spi@12d30000/spidev spi-max-frequency 20000000\n");
+          fprintf (stderr, "    fdtput -c /media/boot/exynos5422-odroidxu3.dtb /spi@12d30000/spidev/controller-data\n");
+          fprintf (stderr, "    fdtput -t x /media/boot/exynos5422-odroidxu3.dtb /spi@12d30000/spidev/controller-data cs-gpio 0x44, 0x5, 0x0\n");
+          fprintf (stderr, "    fdtput -t x /media/boot/exynos5422-odroidxu3.dtb /spi@12d30000/spidev/controller-data samsung,spi-feedback-delay 0\n");
+          fprintf (stderr, "\nstep 3)\n");
+          fprintf (stderr, "  - reboot system.\n");
+          fprintf (stderr, "    sudo reboot\n");
+          fprintf (stderr, "\nstep 4)\n");
+          fprintf (stderr, "  - check your SPI node.\n");
+          fprintf (stderr, "    ls /dev/spidev1.0\n");
+          // fdtput
+          exit (1) ;
+        }
+
+        sleep (1) ;	// To let things get settled
+        changeOwner (argv [0], file1) ;
+      }
+    }
   }
+  else  {
+    if (!moduleLoaded (module1))
+    {
+      sprintf (cmd, "modprobe %s%s", module1, args1) ;
+      system (cmd) ;
+    }
 
-  if (!moduleLoaded (module2))
-  {
-    sprintf (cmd, "modprobe %s%s", module2, args2) ;
-    system (cmd) ;
+    if (!moduleLoaded (module2))
+    {
+      sprintf (cmd, "modprobe %s%s", module2, args2) ;
+      system (cmd) ;
+    }
+
+    if (!moduleLoaded (module2))
+    {
+      fprintf (stderr, "%s: Unable to load %s\n", argv [0], module2) ;
+      exit (1) ;
+    }
+    sleep (1) ;	// To let things get settled
+
+    changeOwner (argv [0], file1) ;
+    changeOwner (argv [0], file2) ;
   }
-
-  if (!moduleLoaded (module2))
-  {
-    fprintf (stderr, "%s: Unable to load %s\n", argv [0], module2) ;
-    exit (1) ;
-  }
-
-  sleep (1) ;	// To let things get settled
-
-  changeOwner (argv [0], file1) ;
-  changeOwner (argv [0], file2) ;
 }
 
 
