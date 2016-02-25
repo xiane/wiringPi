@@ -53,7 +53,7 @@ extern void doPins       (void) ;
 #  define	FALSE	(1==2)
 #endif
 
-#define	VERSION			"2.30"
+#define	VERSION			"2.31"
 #define	PI_USB_POWER_CONTROL	38
 #define	I2CDETECT		"/usr/sbin/i2cdetect"
 
@@ -209,24 +209,34 @@ static void doLoad (int argc, char *argv [])
   else
     _doLoadUsage (argv) ;
 
-  if (piModel == PI_MODEL_ODROIDC || piModel == PI_MODEL_ODROIDXU_34)  {
+  if (piModel == PI_MODEL_ODROIDC  ||
+      piModel == PI_MODEL_ODROIDC2 ||
+      piModel == PI_MODEL_ODROIDXU_34)  {
     if (strcasecmp (argv [2], "i2c") == 0)  {
-      if (piModel == PI_MODEL_ODROIDC)  {
+      if (piModel == PI_MODEL_ODROIDC || piModel == PI_MODEL_ODROIDC2)  {
         module1 = "aml-i2c";
         file1 = "/dev/i2c-1";
+        file2 = "/dev/i2c-2";
 
         if (!moduleLoaded(module1))  {
           sprintf (cmd, "modprobe %s", module1) ;
           system (cmd) ;
         }
       }
-      else
-        file1 = "/dev/i2c-3";
+      else {
+        file1 = "/dev/i2c-4";	/* i2c smbus : 0x12c70000 */
+        file2 = "/dev/i2c-1";	/* hsi2c : 0x12cb0000 */
+      }
 
       sleep (1) ;	// To let things get settled
       changeOwner (argv [0], file1) ;
+      changeOwner (argv [0], file2) ;
     }
     else  {
+      if (piModel == PI_MODEL_ODROIDC2) {
+          fprintf (stderr, "ODROID-C2 : H/W SPI not support!\n") ;
+          return;
+      }
       if (piModel == PI_MODEL_ODROIDC)  {
         file1 = "/dev/spidev0.0";
         module1 = "spidev";
@@ -753,8 +763,10 @@ static void doReset (char *progName)
 
   /**/ if ((model == PI_MODEL_A)  || (model == PI_MODEL_B))
     endPin = 16 ;
-  else if ((model == PI_MODEL_BP) || (model == PI_MODEL_ODROIDC) 
-        || (model == PI_MODEL_ODROIDXU_34))
+  else if ((model == PI_MODEL_BP)       ||
+           (model == PI_MODEL_ODROIDC)  ||
+           (model == PI_MODEL_ODROIDC2) ||
+           (model == PI_MODEL_ODROIDXU_34))
     endPin = 39 ;
   else if (model == PI_MODEL_CM)
   {
@@ -1322,7 +1334,9 @@ int main (int argc, char *argv [])
       printf ("    projects@drogon.net\n") ;
       printf ("with a copy of your /proc/cpuinfo if possible\n") ;
     }
-    else if (model == PI_MODEL_ODROIDC || model == PI_MODEL_ODROIDXU_34)
+    else if ( model == PI_MODEL_ODROIDC     ||
+              model == PI_MODEL_ODROIDXU_34 ||
+              model == PI_MODEL_ODROIDC2      )
     {
       printf ("Hardkernel ODROID Details:\n") ;
       printf ("  Type: %s, Revision: %s, Memory: %dMB, Maker: %s\n",
