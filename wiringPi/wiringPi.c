@@ -1172,6 +1172,42 @@ int wiringPiFailure (int fatal, const char *message, ...)
   return 0 ;
 }
 
+const char wpi_mode_str[4][20] = {
+	"WPI_MODE_PINS",
+	"WPI_MODE_GPIO",
+	"WPI_MODE_GPIO_SYS",
+	"WPI_MODE_PHYS",
+};
+
+void wiringPiGpioCheck (const char *call_func, int origPin, int pin)
+{
+    if (wiringPiMode == WPI_MODE_PINS || wiringPiMode == WPI_MODE_PHYS)
+    {
+	// maybe pin is not gpio.
+	if ( pin < 0 ) {
+		(void)wiringPiFailure (WPI_FATAL,
+			"\n**************** %s ****************\n"	\
+			"\nCall Function = %s, wiringPiMode = %s\n"	\
+			"\nError gpio control (OrigPin = %d, pin = %d)\n\n",
+			__func__, call_func, wpi_mode_str[wiringPiMode],
+			origPin, pin);
+	}
+    }
+    else {
+	int i;
+	for(i = 0; i < 64; i++)	{
+		if (origPin == pinToGpio[i])	break;
+	}
+	if (i == 64) {
+		(void)wiringPiFailure (WPI_FATAL,
+			"\n**************** %s ****************\n"	\
+			"\nCall Function = %s, wiringPiMode = %s\n"	\
+			"\nCannot found gpio pin! (OrigPin = %d)\n\n",
+			__func__, call_func, wpi_mode_str[wiringPiMode],
+			origPin);
+	}
+    }
+}
 
 /*
  * piBoardRev:
@@ -1836,11 +1872,8 @@ void pinMode (int pin, int mode)
     else if (wiringPiMode != WPI_MODE_GPIO)
       return ;
 
-    // maybe pin is not gpio.
-    if ( pin < 0 ) {
-	printf("%s : Pin control error! (OrigPin = %d, pin = %d)\n", __func__, origPin, pin);
-	return;
-    }
+    wiringPiGpioCheck (__func__, origPin, pin);
+
     softPwmStop  (origPin) ;
     softToneStop (origPin) ;
 
@@ -1976,11 +2009,7 @@ void pullUpDnControl (int pin, int pud)
     else if (wiringPiMode != WPI_MODE_GPIO)
       return ;
 
-    // maybe pin is not gpio.
-    if ( pin < 0 ) {
-	printf("%s : Pin control error! (OrigPin = %d, pin = %d)\n", __func__, origPin, pin);
-	return;
-    }
+    wiringPiGpioCheck (__func__, origPin, pin);
 
     if( piModel == PI_MODEL_ODROIDC || piModel == PI_MODEL_ODROIDC2 ) {
 
@@ -2098,11 +2127,7 @@ int digitalRead (int pin)
     else if (wiringPiMode != WPI_MODE_GPIO)
       return LOW ;
 
-    // maybe pin is not gpio.
-    if ( pin < 0 ) {
-	printf("%s : Pin control error! (OrigPin = %d, pin = %d)\n", __func__, origPin, pin);
-	return;
-    }
+    wiringPiGpioCheck (__func__, origPin, pin);
 
     if      ( piModel == PI_MODEL_ODROIDC || piModel == PI_MODEL_ODROIDC2 )  {
       if ((*(gpio + gpioToGPLEVReg(pin)) & (1 << gpioToShiftReg(pin))) != 0)
@@ -2189,11 +2214,7 @@ void digitalWrite (int pin, int value)
     else if (wiringPiMode != WPI_MODE_GPIO)
       return ;
 
-    // maybe pin is not gpio.
-    if ( pin < 0 ) {
-	printf("%s : Pin control error! (OrigPin = %d, pin = %d)\n", __func__, origPin, pin);
-	return;
-    }
+    wiringPiGpioCheck (__func__, origPin, pin);
 
     if      ( piModel == PI_MODEL_ODROIDC || piModel == PI_MODEL_ODROIDC2 )  {
       if (value == LOW)
