@@ -219,7 +219,7 @@ static void doLoad (int argc, char *argv [])
         file2 = "/dev/i2c-2";
 
         if (!moduleLoaded(module1))  {
-          sprintf (cmd, "modprobe %s", module1) ;
+          sprintf (cmd, "PATH=/bin:/usr/bin:/sbin:/usr/local/bin modprobe %s", module1) ;
           system (cmd) ;
         }
       }
@@ -242,11 +242,11 @@ static void doLoad (int argc, char *argv [])
         module1 = "spidev";
         module2 = "spicc";
         if (!moduleLoaded(module1))  {
-          sprintf (cmd, "modprobe %s%s", module1, args1) ;
+          sprintf (cmd, "PATH=/bin:/usr/bin:/sbin:/usr/local/bin modprobe %s%s", module1, args1) ;
           system (cmd) ;
         }
         if (!moduleLoaded(module2))  {
-          sprintf (cmd, "modprobe %s", module2) ;
+          sprintf (cmd, "PATH=/bin:/usr/bin:/sbin:/usr/local/bin modprobe %s", module2) ;
           system (cmd) ;
         }
         if (!moduleLoaded (module2))
@@ -297,13 +297,13 @@ static void doLoad (int argc, char *argv [])
   else  {
     if (!moduleLoaded (module1))
     {
-      sprintf (cmd, "modprobe %s%s", module1, args1) ;
+      sprintf (cmd, "PATH=/bin:/usr/bin:/sbin:/usr/local/bin modprobe %s%s", module1, args1) ;
       system (cmd) ;
     }
 
     if (!moduleLoaded (module2))
     {
-      sprintf (cmd, "modprobe %s%s", module2, args2) ;
+      sprintf (cmd, "PATH=/bin:/usr/bin:/sbin:/usr/local/bin modprobe %s%s", module2, args2) ;
       system (cmd) ;
     }
 
