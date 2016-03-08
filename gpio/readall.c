@@ -253,7 +253,7 @@ static char *physNamesOdroidXU [64] =
   "    MOSI", "0v      ",
   "    MISO", "GPIO. 24",
   "    SCLK", "CE0     ",
-  "      0v", "GPIO.190",
+  "      0v", "GPIO. 25",
   "I2C5.SDA", "I2C5.SCL",
   "GPIO. 28", "0v      ",
   "GPIO. 30", "GPIO. 29",
@@ -428,10 +428,12 @@ static void readallPhysOdroidC (int physPin, int model, int rev)
 {
   int pin ;
 
-  if (physPinToGpio (physPin) == -1)
-    printf (" |      |    ") ;
+  if     ((physPinToGpio (physPin) == -1)  && (physToWpi [physPin] == -1))
+    printf (" |      |    ");
+  else if (physPinToGpio (physPin) != -1)
+    printf (" |  %3d | %3d", physPinToGpio (physPin), physToWpi [physPin]);
   else
-    printf (" |  %3d | %3d", physPinToGpio (physPin), physToWpi [physPin]) ;
+    printf (" |      | %3d", physToWpi [physPin]);
 
   if (model == PI_MODEL_ODROIDC)
 	printf (" | %s", physNamesOdroidc [physPin]) ;
@@ -442,8 +444,8 @@ static void readallPhysOdroidC (int physPin, int model, int rev)
 		printf (" | %s", physNamesOdroidc2_Rev1_1 [physPin]) ;
   }
 
-  if (physToWpi [physPin] == -1)
-    printf (" |      |  ") ;
+  if ((physToWpi [physPin] == -1) || (physPinToGpio (physPin) == -1))
+    printf (" |      |  ");
   else
   {
     /**/ if (wpMode == WPI_MODE_GPIO)
@@ -470,8 +472,8 @@ static void readallPhysOdroidC (int physPin, int model, int rev)
 
 // Same, reversed
 
-  if (physToWpi [physPin] == -1)
-    printf (" |   |     ") ;
+  if ((physToWpi [physPin] == -1) || (physPinToGpio (physPin) == -1))
+    printf (" |   |     ");
   else
   {
     /**/ if (wpMode == WPI_MODE_GPIO)
@@ -499,10 +501,12 @@ static void readallPhysOdroidC (int physPin, int model, int rev)
 		printf (" | %-6s", physNamesOdroidc2_Rev1_1 [physPin]) ;
   }
 
-  if (physPinToGpio (physPin) == -1)
-    printf (" |     |     ") ;
+  if     ((physPinToGpio (physPin) == -1) && (physToWpi [physPin] == -1))
+    printf (" |     |     ");
+  else if (physPinToGpio (physPin) != -1)
+    printf (" | %-3d |  %-3d", physToWpi [physPin], physPinToGpio (physPin));
   else
-    printf (" | %-3d |  %-3d", physToWpi [physPin], physPinToGpio (physPin)) ;
+    printf (" | %-3d |     ", physToWpi [physPin]);
 
   printf (" |\n") ;
 }
@@ -510,7 +514,6 @@ static void readallPhysOdroidC (int physPin, int model, int rev)
 void ReadallOdroidC (int model, int rev)
 {
   int pin ;
-  char *type ;
 
   if(model == PI_MODEL_ODROIDC2)
 	printf (" +------+-----+----------+------+ Model  ODROID-C2 +------+----------+-----+------+\n") ;
@@ -528,14 +531,16 @@ static void readallPhysOdroidXU (int physPin)
 {
   int pin ;
 
-  if (physPinToGpio (physPin) == -1)
+  if     ((physPinToGpio (physPin) == -1) && (physToWpi [physPin] == -1))
     printf (" |      |    ") ;
+  else if (physPinToGpio (physPin) != -1)
+    printf (" |  %3d | %3d", physPinToGpio (physPin), physToWpi [physPin]);
   else
-    printf (" |  %3d | %3d", physPinToGpio (physPin), physToWpi [physPin]) ;
+    printf (" |      | %3d", physToWpi [physPin]);
 
   printf (" | %s", physNamesOdroidXU [physPin]) ;
 
-  if (physToWpi [physPin] == -1)
+  if ((physToWpi [physPin] == -1) || (physPinToGpio (physPin) == -1))
     printf (" |      |  ") ;
   else
   {
@@ -558,7 +563,7 @@ static void readallPhysOdroidXU (int physPin)
 
 // Same, reversed
 
-  if (physToWpi [physPin] == -1)
+  if ((physToWpi [physPin] == -1) || (physPinToGpio (physPin) == -1))
     printf (" |   |     ") ;
   else
   {
@@ -575,10 +580,12 @@ static void readallPhysOdroidXU (int physPin)
 
   printf (" | %-6s", physNamesOdroidXU [physPin]) ;
 
-  if (physPinToGpio (physPin) == -1)
+  if     ((physPinToGpio (physPin) == -1) && (physToWpi [physPin] == -1))
     printf (" |     |     ") ;
+  else if (physPinToGpio (physPin) != -1)
+    printf (" | %-3d |  %-3d", physToWpi [physPin], physPinToGpio (physPin));
   else
-    printf (" | %-3d |  %-3d", physToWpi [physPin], physPinToGpio (physPin)) ;
+    printf (" | %-3d |     ", physToWpi [physPin]);
 
   printf (" |\n") ;
 }
@@ -586,7 +593,6 @@ static void readallPhysOdroidXU (int physPin)
 void ReadallOdroidXU (void)
 {
   int pin ;
-  char *type ;
 
   printf (" +------+-----+----------+------ Model ODROID-XU3/4 ------+----------+-----+------+\n") ;
   printf (" | GPIO | wPi |   Name   | Mode | V | Physical | V | Mode |   Name   | wPi | GPIO |\n") ;
