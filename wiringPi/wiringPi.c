@@ -2671,10 +2671,14 @@ int wiringPiISR (int pin, int mode, void (*function)(void))
 
     if (sysFds [fd_base] == -1)
     {
-      if(piThreadIrqMode)
-        sprintf (fName, "/sys/class/gpio/gpio%d/value", bcmGpioPin) ;
+      if (piModel == PI_MODEL_ODROIDC) {
+        if(piThreadIrqMode)
+          sprintf (fName, "/sys/class/gpio/gpio%d/value", bcmGpioPin) ;
+        else
+          sprintf (fName, "/sys/class/aml_gpio/gpio%d/value", bcmGpioPin) ;
+      }
       else
-        sprintf (fName, "/sys/class/aml_gpio/gpio%d/value", bcmGpioPin) ;
+          sprintf (fName, "/sys/class/gpio/gpio%d/value", bcmGpioPin) ;
 
       if ((sysFds [fd_base] = open (fName, O_RDWR)) < 0)
         return wiringPiFailure (WPI_FATAL, "wiringPiISR: unable to open %s: %s\n", fName, strerror (errno)) ;
@@ -2945,14 +2949,6 @@ int wiringPiSetup (void)
   // ADC sysfs open (/sys/class/saradc/saradc_ch0, ch1)
     adcFds [0] = open (C2_piAinNode0, O_RDONLY) ;
     adcFds [1] = open (C2_piAinNode1, O_RDONLY) ;
-
-    // Check aml_gpio directory for gpio irq
-    {
-        struct stat s;
-
-        if(-1 == stat("/sys/class/aml_gpio", &s))   piThreadIrqMode = TRUE;
-        else                                        piThreadIrqMode = FALSE;
-    }
   }
   else if ( model == PI_MODEL_ODROIDXU_34 ) {
      pinToGpio =  pinToGpioOdroidXU;
@@ -3155,15 +3151,6 @@ int wiringPiSetupSys (void)
 
 // Open and scan the directory, looking for exported GPIOs, and pre-open
 //	the 'value' interface to speed things up for later
-
-    // Check aml_gpio directory for gpio irq
-    {
-        struct stat s;
-
-        if(-1 == stat("/sys/class/aml_gpio", &s))   piThreadIrqMode = TRUE;
-        else                                        piThreadIrqMode = FALSE;
-    }
-
     for (pin = C2_GPIOY_PIN_START ; pin < C2_GPIOY_PIN_START + 64 ; ++pin)
     {
       if(piThreadIrqMode)
