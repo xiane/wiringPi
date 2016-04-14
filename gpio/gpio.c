@@ -462,10 +462,7 @@ void doExport (int argc, char *argv [])
 
   mode = argv [3] ;
 
-  if (piModel == PI_MODEL_ODROIDC)
-    sprintf (fName, "/sys/class/%s/export", "aml_gpio");
-  else
-    sprintf (fName, "/sys/class/%s/export", "gpio");
+  sprintf (fName, "/sys/class/%s/export", "gpio");
 
   if ((fd = fopen (fName, "w")) == NULL)
   {
@@ -476,10 +473,7 @@ void doExport (int argc, char *argv [])
   fprintf (fd, "%d\n", pin) ;
   fclose (fd) ;
 
-  if (piModel == PI_MODEL_ODROIDC)
-    sprintf (fName, "/sys/class/aml_gpio/gpio%d/direction", pin) ;
-  else
-    sprintf (fName, "/sys/class/gpio/gpio%d/direction", pin) ;
+  sprintf (fName, "/sys/class/gpio/gpio%d/direction", pin) ;
 
   if ((fd = fopen (fName, "w")) == NULL)
   {
@@ -501,17 +495,11 @@ void doExport (int argc, char *argv [])
 
 // Change ownership so the current user can actually use it!
 
-  if (piModel == PI_MODEL_ODROIDC)
-    sprintf (fName, "/sys/class/aml_gpio/gpio%d/value", pin) ;
-  else
-    sprintf (fName, "/sys/class/gpio/gpio%d/value", pin) ;
+  sprintf (fName, "/sys/class/gpio/gpio%d/value", pin) ;
 
   changeOwner (argv [0], fName) ;
 
-  if (piModel == PI_MODEL_ODROIDC)
-    sprintf (fName, "/sys/class/aml_gpio/gpio%d/edge", pin) ;
-  else
-    sprintf (fName, "/sys/class/gpio/gpio%d/edge", pin) ;
+  sprintf (fName, "/sys/class/gpio/gpio%d/edge", pin) ;
 
   changeOwner (argv [0], fName) ;
 
@@ -593,10 +581,7 @@ void doEdge (int argc, char *argv [])
 
 // Export the pin and set direction to input
 
-  if (piModel == PI_MODEL_ODROIDC)
-    sprintf (fName, "/sys/class/%s/export", "aml_gpio");
-  else
-    sprintf (fName, "/sys/class/%s/export", "gpio");
+  sprintf (fName, "/sys/class/%s/export", "gpio");
 
   if ((fd = fopen (fName, "w")) == NULL)
   {
@@ -606,10 +591,7 @@ void doEdge (int argc, char *argv [])
   fprintf (fd, "%d\n", pin) ;
   fclose (fd) ;
 
-  if (piModel == PI_MODEL_ODROIDC)
-    sprintf (fName, "/sys/class/aml_gpio/gpio%d/direction", pin);
-  else
-    sprintf (fName, "/sys/class/gpio/gpio%d/direction", pin);
+  sprintf (fName, "/sys/class/gpio/gpio%d/direction", pin);
 
   if ((fd = fopen (fName, "w")) == NULL)
   {
@@ -620,10 +602,7 @@ void doEdge (int argc, char *argv [])
   fprintf (fd, "in\n") ;
   fclose (fd) ;
 
-  if (piModel == PI_MODEL_ODROIDC)
-    sprintf (fName, "/sys/class/aml_gpio/gpio%d/edge", pin);
-  else
-    sprintf (fName, "/sys/class/gpio/gpio%d/edge", pin);
+  sprintf (fName, "/sys/class/gpio/gpio%d/edge", pin);
 
   if ((fd = fopen (fName, "w")) == NULL)
   {
@@ -643,17 +622,11 @@ void doEdge (int argc, char *argv [])
 
 // Change ownership of the value and edge files, so the current user can actually use it!
 
-  if (piModel == PI_MODEL_ODROIDC)
-    sprintf (fName, "/sys/class/aml_gpio/gpio%d/value", pin);
-  else
-    sprintf (fName, "/sys/class/gpio/gpio%d/value", pin);
+  sprintf (fName, "/sys/class/gpio/gpio%d/value", pin);
 
   changeOwner (argv [0], fName) ;
 
-  if (piModel == PI_MODEL_ODROIDC)
-    sprintf (fName, "/sys/class/aml_gpio/gpio%d/edge", pin);
-  else
-    sprintf (fName, "/sys/class/gpio/gpio%d/edge", pin);
+  sprintf (fName, "/sys/class/gpio/gpio%d/edge", pin);
 
   changeOwner (argv [0], fName) ;
 
@@ -682,10 +655,7 @@ void doUnexport (int argc, char *argv [])
 
   pin = atoi (argv [2]) ;
 
-  if (piModel == PI_MODEL_ODROIDC)
-    sprintf (fName, "/sys/class/%s/unexport", "aml_gpio") ;
-  else
-    sprintf (fName, "/sys/class/%s/unexport", "gpio") ;
+  sprintf (fName, "/sys/class/%s/unexport", "gpio") ;
 
   if ((fd = fopen (fName, "w")) == NULL)
   {
