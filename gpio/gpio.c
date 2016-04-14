@@ -53,7 +53,11 @@ extern void doPins       (void) ;
 #  define	FALSE	(1==2)
 #endif
 
-#define	VERSION			"2.31"
+/*
+	2.31 : ODROID-C1/ODROID-C2 wiringPi support
+	2.33 : ODROID-C1/ODROID-C2 GPIO sysfs irq support
+*/
+#define	VERSION			"2.33"
 #define	PI_USB_POWER_CONTROL	38
 #define	I2CDETECT		"/usr/sbin/i2cdetect"
 

@@ -678,9 +678,6 @@ static int adcFds [2] = {
 
 static int  piModel = PI_MODEL_UNKNOWN;
 
-// Use ODROID-C Model
-static int  piThreadIrqMode = FALSE;
-
 static int sysFdData [64] = {
     -1, -1, -1, -1, -1, -1, -1, -1, // 0...7
     -1, -1, -1, -1, -1, -1, -1, -1, // 8...15
@@ -2453,14 +2450,10 @@ int waitForInterrupt (int pin, int mS)
     if ((fd = sysFds [fd_base & 63]) == -1)
       return -2 ;
 
-  // Setup poll structure
-
+    // Setup poll structure
     polls.fd     = fd ;
 
-    if(piThreadIrqMode)
-      polls.events = POLLIN ;   // Normal data!
-    else
-      polls.events = POLLPRI ;	// Urgent data!
+    polls.events = POLLPRI ;	// Urgent data!
   }
   else if ( piModel == PI_MODEL_ODROIDXU_34 )   {
     int offset = 0;
@@ -2475,15 +2468,15 @@ int waitForInterrupt (int pin, int mS)
     if ((fd = sysFds [fd_base & 63]) == -1)
       return -2 ;
 
-  // Setup poll structure
+    // Setup poll structure
     polls.fd     = fd ;
     polls.events = POLLPRI ;	// Urgent data!
   }
   else  {
     if ((fd = sysFds [pin]) == -1)
       return -2 ;
-  // Setup poll structure
 
+    // Setup poll structure
     polls.fd     = fd ;
     polls.events = POLLPRI ;	// Urgent data!
   }
@@ -2499,19 +2492,6 @@ wait:
 
   (void)read (fd, &c, 1) ;
   lseek (fd, 0, SEEK_SET) ;
-
-  if (  (piModel == PI_MODEL_ODROIDC  && piThreadIrqMode) ||
-	(piModel == PI_MODEL_ODROIDC2 && piThreadIrqMode) )
-  {
-    if ( sysFdData[fd_base] != c )  {
-      sysFdData[fd_base] = c;
-      if      (( sysFdIrqType[fd_base] == INT_EDGE_RISING  ) && ( c == '1' ))  return 1;
-      else if (( sysFdIrqType[fd_base] == INT_EDGE_FALLING ) && ( c == '0' ))  return 1;
-      else if (( sysFdIrqType[fd_base] == INT_EDGE_BOTH    )                )  return 1;
-    }
-    usleep(100);
-    goto wait;
-  }
 
   return x ;
 }
@@ -2671,14 +2651,7 @@ int wiringPiISR (int pin, int mode, void (*function)(void))
 
     if (sysFds [fd_base] == -1)
     {
-      if (piModel == PI_MODEL_ODROIDC) {
-        if(piThreadIrqMode)
-          sprintf (fName, "/sys/class/gpio/gpio%d/value", bcmGpioPin) ;
-        else
-          sprintf (fName, "/sys/class/aml_gpio/gpio%d/value", bcmGpioPin) ;
-      }
-      else
-          sprintf (fName, "/sys/class/gpio/gpio%d/value", bcmGpioPin) ;
+      sprintf (fName, "/sys/class/gpio/gpio%d/value", bcmGpioPin) ;
 
       if ((sysFds [fd_base] = open (fName, O_RDWR)) < 0)
         return wiringPiFailure (WPI_FATAL, "wiringPiISR: unable to open %s: %s\n", fName, strerror (errno)) ;
@@ -2920,14 +2893,6 @@ int wiringPiSetup (void)
   // ADC sysfs open (/sys/class/saradc/saradc_ch0, ch1)
     adcFds [0] = open (piAinNode0, O_RDONLY) ;
     adcFds [1] = open (piAinNode1, O_RDONLY) ;
-
-    // Check aml_gpio directory for gpio irq
-    {
-        struct stat s;
-
-        if(-1 == stat("/sys/class/aml_gpio", &s))   piThreadIrqMode = TRUE;
-        else                                        piThreadIrqMode = FALSE;
-    }
   }
   else if ( model == PI_MODEL_ODROIDC2 )	{
 
@@ -3115,22 +3080,9 @@ int wiringPiSetupSys (void)
 
 // Open and scan the directory, looking for exported GPIOs, and pre-open
 //	the 'value' interface to speed things up for later
-
-    // Check aml_gpio directory for gpio irq
-    {
-        struct stat s;
-
-        if(-1 == stat("/sys/class/aml_gpio", &s))   piThreadIrqMode = TRUE;
-        else                                        piThreadIrqMode = FALSE;
-    }
-
     for (pin = GPIO_PIN_BASE ; pin < GPIO_PIN_BASE + 64 ; ++pin)
     {
-      if(piThreadIrqMode)
-          sprintf (fName, "/sys/class/gpio/gpio%d/value", pin) ;
-      else
-          sprintf (fName, "/sys/class/aml_gpio/gpio%d/value", pin) ;
-
+      sprintf (fName, "/sys/class/gpio/gpio%d/value", pin) ;
       sysFds [pin - GPIO_PIN_BASE] = open (fName, O_RDWR) ;
     }
 
@@ -3153,11 +3105,7 @@ int wiringPiSetupSys (void)
 //	the 'value' interface to speed things up for later
     for (pin = C2_GPIOY_PIN_START ; pin < C2_GPIOY_PIN_START + 64 ; ++pin)
     {
-      if(piThreadIrqMode)
-          sprintf (fName, "/sys/class/gpio/gpio%d/value", pin) ;
-      else
-          sprintf (fName, "/sys/class/aml_gpio/gpio%d/value", pin) ;
-
+      sprintf (fName, "/sys/class/gpio/gpio%d/value", pin) ;
       sysFds [pin - C2_GPIOY_PIN_START] = open (fName, O_RDWR) ;
     }
 
