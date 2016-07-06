@@ -1237,7 +1237,7 @@ void wiringPiGpioCheck (const char *call_func, int origPin, int pin)
  *  added :
  *  0100 - Model ODROID XU3/4, Rev 1.0, 2048M, Hardkernel
  *  added :
- *  020b - Model ODROID C2, 2048M, Hardkernel
+ *  02xx - Model ODROID C2, 2048M, Hardkernel
  *         Rev 1.0 : /sys/class/odroid/boardrev value is 0 (Dev board)
  *         Rev 1.1 : /sys/class/odroid/boardrev value is 1 (Mass board)
  *
@@ -1327,7 +1327,7 @@ int piBoardRev (void)
   else
     boardRev = 2;
 
-  if (strcmp (c, "020b") == 0) {
+  if (strncmp (c, "02", 2) == 0) {
 	int fd = 0;
 	char buf[2];
 
@@ -1427,7 +1427,7 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *overVolted)
   else if (strcmp (c, "0100") == 0) {
     *model = PI_MODEL_ODROIDXU_34;  *rev = PI_VERSION_1;  *mem = 2048;  *maker = PI_MAKER_HARDKERNEL;
   }
-  else if (strcmp (c, "020b") == 0)	{
+  else if (strncmp (c, "02", 2) == 0)	{
     *model = PI_MODEL_ODROIDC2; *mem = 2048;  *maker = PI_MAKER_HARDKERNEL;
     *rev = piBoardRev ();
   }
