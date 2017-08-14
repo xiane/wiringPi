@@ -2379,20 +2379,136 @@ void pwmToneWrite (int pin, int freq)
  *********************************************************************************
  */
 
+union	reg_bitfield {
+	unsigned int	wvalue;
+	struct {
+		unsigned int	bit0  : 1;
+		unsigned int	bit1  : 1;
+		unsigned int	bit2  : 1;
+		unsigned int	bit3  : 1;
+		unsigned int	bit4  : 1;
+		unsigned int	bit5  : 1;
+		unsigned int	bit6  : 1;
+		unsigned int	bit7  : 1;
+		unsigned int	bit8  : 1;
+		unsigned int	bit9  : 1;
+		unsigned int	bit10 : 1;
+		unsigned int	bit11 : 1;
+		unsigned int	bit12 : 1;
+		unsigned int	bit13 : 1;
+		unsigned int	bit14 : 1;
+		unsigned int	bit15 : 1;
+		unsigned int	bit16 : 1;
+		unsigned int	bit17 : 1;
+		unsigned int	bit18 : 1;
+		unsigned int	bit19 : 1;
+		unsigned int	bit20 : 1;
+		unsigned int	bit21 : 1;
+		unsigned int	bit22 : 1;
+		unsigned int	bit23 : 1;
+		unsigned int	bit24 : 1;
+		unsigned int	bit25 : 1;
+		unsigned int	bit26 : 1;
+		unsigned int	bit27 : 1;
+		unsigned int	bit28 : 1;
+		unsigned int	bit29 : 1;
+		unsigned int	bit30 : 1;
+		unsigned int	bit31 : 1;
+	} bits;
+};
+
+void digitalWriteByte_XU(int value)
+{
+	union	reg_bitfield	gpx1, gpx2, gpa0;
+
+	/* Read data register */
+	gpx1.wvalue = *(gpio  + (GPIO_X1_DAT_OFFSET >> 2));
+	gpx2.wvalue = *(gpio  + (GPIO_X2_DAT_OFFSET >> 2));
+	gpa0.wvalue = *(gpio1 + (GPIO_A0_DAT_OFFSET >> 2));
+
+	/* Wiring PI GPIO0 = XU3/4 GPA0.3 */
+	gpa0.bits.bit3 = (value & 0x01);
+	/* Wiring PI GPIO1 = XU3/4 GPA0.2 */
+	gpa0.bits.bit2 = (value & 0x02);
+	/* Wiring PI GPIO2 = XU3/4 GPX1.5 */
+	gpx1.bits.bit5 = (value & 0x04);
+	/* Wiring PI GPIO3 = XU3/4 GPX1.6 */
+	gpx1.bits.bit6 = (value & 0x08);
+	/* Wiring PI GPIO4 = XU3/4 GPX1.3 */
+	gpx1.bits.bit3 = (value & 0x10);
+	/* Wiring PI GPIO5 = XU3/4 GPX1.7 */
+	gpx1.bits.bit7 = (value & 0x20);
+	/* Wiring PI GPIO6 = XU3/4 GPX2.0 */
+	gpx2.bits.bit0 = (value & 0x40);
+	/* Wiring PI GPIO7 = XU3/4 GPX1.2 */
+	gpx1.bits.bit2 = (value & 0x80);
+
+	/* update data register */
+	*(gpio  + (GPIO_X1_DAT_OFFSET >> 2)) = gpx1.wvalue;
+	*(gpio  + (GPIO_X2_DAT_OFFSET >> 2)) = gpx2.wvalue;
+	*(gpio1 + (GPIO_A0_DAT_OFFSET >> 2)) = gpa0.wvalue;
+}
+
+void digitalWriteByte_C(int value)
+{
+	union	reg_bitfield	gpiox, gpioy;
+
+	gpiox.wvalue = *(gpio + GPIOX_INP_REG_OFFSET);
+	gpioy.wvalue = *(gpio + GPIOY_INP_REG_OFFSET);
+
+	/* Wiring PI GPIO0 = C1 GPIOY.8 */
+	gpioy.bits.bit8 = (value & 0x01);
+	/* Wiring PI GPIO1 = C1 GPIOY.7 */
+	gpioy.bits.bit7 = (value & 0x02);
+	/* Wiring PI GPIO2 = C1 GPIOX.19 */
+	gpiox.bits.bit19 = (value & 0x04);
+	/* Wiring PI GPIO3 = C1 GPIOX.18 */
+	gpiox.bits.bit18 = (value & 0x08);
+	/* Wiring PI GPIO4 = C1 GPIOX.7 */
+	gpiox.bits.bit7 = (value & 0x10);
+	/* Wiring PI GPIO5 = C1 GPIOX.5 */
+	gpiox.bits.bit5 = (value & 0x20);
+	/* Wiring PI GPIO6 = C1 GPIOX.6 */
+	gpiox.bits.bit6 = (value & 0x40);
+	/* Wiring PI GPIO7 = C1 GPIOY.3 */
+	gpioy.bits.bit3 = (value & 0x80);
+
+	*(gpio + GPIOX_OUTP_REG_OFFSET) = gpiox.wvalue;
+	*(gpio + GPIOY_OUTP_REG_OFFSET) = gpioy.wvalue;
+}
+
+void digitalWriteByte_C2(int value)
+{
+	union	reg_bitfield	gpiox;
+
+	gpiox.wvalue = *(gpio + C2_GPIOX_INP_REG_OFFSET);
+
+	/* Wiring PI GPIO0 = C1 GPIOX.19 */
+	gpiox.bits.bit19 = (value & 0x01);
+	/* Wiring PI GPIO1 = C1 GPIOX.10 */
+	gpiox.bits.bit10 = (value & 0x02);
+	/* Wiring PI GPIO2 = C1 GPIOX.11 */
+	gpiox.bits.bit11 = (value & 0x04);
+	/* Wiring PI GPIO3 = C1 GPIOX.9 */
+	gpiox.bits.bit9 = (value & 0x08);
+	/* Wiring PI GPIO4 = C1 GPIOX.8 */
+	gpiox.bits.bit8 = (value & 0x10);
+	/* Wiring PI GPIO5 = C1 GPIOX.5 */
+	gpiox.bits.bit5 = (value & 0x20);
+	/* Wiring PI GPIO6 = C1 GPIOX.3 */
+	gpiox.bits.bit3 = (value & 0x40);
+	/* Wiring PI GPIO7 = C1 GPIOX.21 */
+	gpiox.bits.bit21 = (value & 0x80);
+
+	*(gpio + C2_GPIOX_OUTP_REG_OFFSET) = gpiox.wvalue;
+}
+
 void digitalWriteByte (int value)
 {
   uint32_t pinSet = 0 ;
   uint32_t pinClr = 0 ;
   int mask = 1 ;
   int pin ;
-
-  if (	piModel == PI_MODEL_ODROIDC  ||
-	piModel == PI_MODEL_ODROIDC2 ||
-	piModel == PI_MODEL_ODROIDXU_34)  {
-	fprintf (stderr, "%s : Unsupport function on %s model\n",
-		__func__, piModelNames [piModel]);
-	exit (EXIT_FAILURE) ;
-  }
 
   /**/ if (wiringPiMode == WPI_MODE_GPIO_SYS)
   {
@@ -2405,6 +2521,19 @@ void digitalWriteByte (int value)
   }
   else
   {
+    switch(piModel) {
+    case PI_MODEL_ODROIDC:
+      digitalWriteByte_C(value);
+      return;
+    case PI_MODEL_ODROIDC2:
+      digitalWriteByte_C2(value);
+      return;
+    case PI_MODEL_ODROIDXU_34:
+      digitalWriteByte_XU(value);
+      return;
+    default :
+      break;
+    }
     for (pin = 0 ; pin < 8 ; ++pin)
     {
       if ((value & mask) == 0)
