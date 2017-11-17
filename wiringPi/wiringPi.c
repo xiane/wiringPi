@@ -80,6 +80,10 @@
 #define	FALSE	(1==2)
 #endif
 
+#ifndef ARRAY_SIZE
+#define ARRAY_SIZE(x)	(sizeof(x) / sizeof((x)[0]))
+#endif
+
 // Environment Variables
 
 #define	ENV_DEBUG	"WIRINGPI_DEBUG"
@@ -275,6 +279,7 @@ static void (*isrFunctions [64])(void) ;
 //	Cope for 3 different board revisions here.
 
 static int *pinToGpio ;
+static int pin_array_count;
 
 // Revision 1, 1.1:
 
@@ -705,6 +710,24 @@ static int sysFdIrqType [64] = {
     -1, -1, -1, -1, -1, -1, -1, -1, // 48...55
     -1, -1, -1, -1, -1, -1, -1, -1, // 56...63
 };
+
+static int gpioToPin(int gpio)
+{
+	int pin;
+
+	if (pinToGpio == NULL) {
+		(void)wiringPiFailure (WPI_FATAL, "%s: wiringPi is not initialized yet\n", __func__);
+		return -1;
+	}
+
+	for (pin = 0; pin < pin_array_count; ++pin) {
+		if (pinToGpio[pin] == gpio)
+			return pin;
+	}
+
+	(void)wiringPiFailure (WPI_FATAL, "%s: could not find the pin of %d gpio\n", __func__, gpio);
+	return -1;
+}
 
 //
 // sysfs FD offset
@@ -2095,26 +2118,7 @@ int digitalRead (int pin)
   {
     /**/ if (wiringPiMode == WPI_MODE_GPIO_SYS)	// Sys mode
     {
-      int   fd_pos = 0;
-
-      if      ( piModel == PI_MODEL_ODROIDC )   {
-	fd_pos = pin < GPIO_PIN_BASE ? 0: pin - GPIO_PIN_BASE;
-      }
-      else if ( piModel == PI_MODEL_ODROIDC2 )	{
-	fd_pos = pin < C2_GPIOY_PIN_START ? 63 : pin - C2_GPIOY_PIN_START;
-      }
-      else if ( piModel == PI_MODEL_ODROIDXU_34 )   {
-        int offset = 0;
-
-        offset = gpioFdOffsetXU34(pin);
-
-        if(offset != -1)
-            fd_pos = pin - offset;
-        else
-            fd_pos = 63;
-      }
-      else
-        fd_pos = pin;
+      int   fd_pos = gpioToPin(pin);
 
       if ( sysFds [fd_pos] == -1)
         return LOW ;
@@ -2180,26 +2184,7 @@ void digitalWrite (int pin, int value)
   {
     /**/ if (wiringPiMode == WPI_MODE_GPIO_SYS)	// Sys mode
     {
-      int   fd_pos = 0;
-
-      if      ( piModel == PI_MODEL_ODROIDC )   {
-	fd_pos = pin < GPIO_PIN_BASE ? 0: pin - GPIO_PIN_BASE;
-      }
-      else if ( piModel == PI_MODEL_ODROIDC2 )	{
-	fd_pos = pin < C2_GPIOY_PIN_START ? 63 : pin - C2_GPIOY_PIN_START;
-      }
-      else if ( piModel == PI_MODEL_ODROIDXU_34 )   {
-        int offset = 0;
-
-        offset = gpioFdOffsetXU34(pin);
-
-        if(offset != -1)
-            fd_pos = pin - offset;
-        else
-            fd_pos = 63;
-      }
-      else
-        fd_pos = pin;
+      int   fd_pos = gpioToPin(pin);
 
       if (sysFds [fd_pos] != -1)
       {
@@ -2514,7 +2499,7 @@ void digitalWriteByte (int value)
   {
     for (pin = 0 ; pin < 8 ; ++pin)
     {
-      digitalWrite (pin, value & mask) ;
+      digitalWrite (pinToGpio[pin], value & mask) ;
       mask <<= 1 ;
     }
     return ;
@@ -3021,6 +3006,7 @@ int wiringPiSetup (void)
   if ( model == PI_MODEL_ODROIDC )  {
 
      pinToGpio =  pinToGpioOdroidC;
+    pin_array_count = ARRAY_SIZE(pinToGpioOdroidC);
     physToGpio = physToGpioOdroidC;
 
   // GPIO:
@@ -3038,10 +3024,12 @@ int wiringPiSetup (void)
 
     if(rev == PI_VERSION_1) {
 	 pinToGpio =  pinToGpioOdroidC2_Rev1_0;
+	 pin_array_count = ARRAY_SIZE(pinToGpioOdroidC2_Rev1_0);
 	physToGpio = physToGpioOdroidC2_Rev1_0;
     }
     else {
 	 pinToGpio =  pinToGpioOdroidC2_Rev1_1;
+	 pin_array_count = ARRAY_SIZE(pinToGpioOdroidC2_Rev1_1);
 	physToGpio = physToGpioOdroidC2_Rev1_1;
     }
 
@@ -3057,6 +3045,7 @@ int wiringPiSetup (void)
   }
   else if ( model == PI_MODEL_ODROIDXU_34 ) {
      pinToGpio =  pinToGpioOdroidXU;
+     pin_array_count = ARRAY_SIZE(pinToGpioOdroidXU);
     physToGpio = physToGpioOdroidXU;
 
   // GPIO:
@@ -3216,15 +3205,8 @@ int wiringPiSetupSys (void)
 
   if ( model == PI_MODEL_ODROIDC )  {
      pinToGpio =  pinToGpioOdroidC ;
+     pin_array_count = ARRAY_SIZE(pinToGpioOdroidC);
     physToGpio = physToGpioOdroidC ;
-
-// Open and scan the directory, looking for exported GPIOs, and pre-open
-//	the 'value' interface to speed things up for later
-    for (pin = GPIO_PIN_BASE ; pin < GPIO_PIN_BASE + 64 ; ++pin)
-    {
-      sprintf (fName, "/sys/class/gpio/gpio%d/value", pin) ;
-      sysFds [pin - GPIO_PIN_BASE] = open (fName, O_RDWR) ;
-    }
 
   // ADC sysfs open (/sys/class/saradc/saradc_ch0, ch1)
 
@@ -3234,19 +3216,13 @@ int wiringPiSetupSys (void)
   else if ( model == PI_MODEL_ODROIDC2 )	{
     if(rev == PI_VERSION_1) {
 	 pinToGpio =  pinToGpioOdroidC2_Rev1_0;
+	 pin_array_count = ARRAY_SIZE(pinToGpioOdroidC2_Rev1_0);
 	physToGpio = physToGpioOdroidC2_Rev1_0;
     }
     else {
 	 pinToGpio =  pinToGpioOdroidC2_Rev1_1;
+	 pin_array_count = ARRAY_SIZE(pinToGpioOdroidC2_Rev1_1);
 	physToGpio = physToGpioOdroidC2_Rev1_1;
-    }
-
-// Open and scan the directory, looking for exported GPIOs, and pre-open
-//	the 'value' interface to speed things up for later
-    for (pin = C2_GPIOY_PIN_START ; pin < C2_GPIOY_PIN_START + 64 ; ++pin)
-    {
-      sprintf (fName, "/sys/class/gpio/gpio%d/value", pin) ;
-      sysFds [pin - C2_GPIOY_PIN_START] = open (fName, O_RDWR) ;
     }
 
   // ADC sysfs open (/sys/class/saradc/saradc_ch0, ch1)
@@ -3256,47 +3232,23 @@ int wiringPiSetupSys (void)
   }
   else if ( model == PI_MODEL_ODROIDXU_34 ) {
      pinToGpio =  pinToGpioOdroidXU ;
+     pin_array_count = ARRAY_SIZE(pinToGpioOdroidXU);
     physToGpio = physToGpioOdroidXU ;
 
-// Open and scan the directory, looking for exported GPIOs, and pre-open
-//	the 'value' interface to speed things up for later
-    for (pin = 0; pin < 255; pin++) {
-
-      offset = gpioFdOffsetXU34(pin);
-
-      if(offset != -1)    {
-        sprintf (fName, "/sys/class/gpio/gpio%d/value", pin);
-        sysFds[pin - offset] = open (fName, O_RDWR);
-      }
-    }
   // ADC
   // ADC Fds[0] = ("/sys/devices/12d10000.adc/iio:device0/in_voltage0_raw")
   // ADC Fds[1] = ("/sys/devices/12d10000.adc/iio:device0/in_voltage3_raw")
     adcFds [0] = open (piAinNode0_xu, O_RDONLY) ;
     adcFds [1] = open (piAinNode1_xu, O_RDONLY) ;
   }
-  else  {
-    boardRev = piBoardRev () ;
-
-    if (boardRev == 1)
-    {
-       pinToGpio =  pinToGpioR1 ;
-      physToGpio = physToGpioR1 ;
-    }
-    else
-    {
-       pinToGpio =  pinToGpioR2 ;
-      physToGpio = physToGpioR2 ;
-    }
 
 // Open and scan the directory, looking for exported GPIOs, and pre-open
 //	the 'value' interface to speed things up for later
     for (pin = 0 ; pin < 64 ; ++pin)
     {
-      sprintf (fName, "/sys/class/gpio/gpio%d/value", pin) ;
+      sprintf (fName, "/sys/class/gpio/gpio%d/value", pinToGpio[pin]) ;
       sysFds [pin] = open (fName, O_RDWR) ;
     }
-  }
 
   initialiseEpoch () ;
 
