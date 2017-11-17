@@ -2551,55 +2551,13 @@ int waitForInterrupt (int pin, int mS)
   int fd, x ;
   uint8_t c ;
   struct pollfd polls ;
-  int fd_base;
 
-  /**/ if (wiringPiMode == WPI_MODE_PINS)
-    pin = pinToGpio [pin & 63] ;
-  else if (wiringPiMode == WPI_MODE_PHYS)
-    pin = physToGpio [pin & 63] ;
-
-  if ( piModel == PI_MODEL_ODROIDC || piModel == PI_MODEL_ODROIDC2 )  {
-
-	if ( piModel == PI_MODEL_ODROIDC2 )	{
-	    fd_base = pin < C2_GPIOY_PIN_START ? 63: pin - C2_GPIOY_PIN_START;
-	}
-	else	{
-	    fd_base = pin < GPIO_PIN_BASE ? 0: pin - GPIO_PIN_BASE;
-	}
-
-    if ((fd = sysFds [fd_base & 63]) == -1)
-      return -2 ;
-
-    // Setup poll structure
-    polls.fd     = fd ;
-
-    polls.events = POLLPRI ;	// Urgent data!
-  }
-  else if ( piModel == PI_MODEL_ODROIDXU_34 )   {
-    int offset = 0;
-
-    offset = gpioFdOffsetXU34(pin);
-
-    if(offset != -1)
-        fd_base = pin - offset;
-    else
-        fd_base = 63;
-
-    if ((fd = sysFds [fd_base & 63]) == -1)
-      return -2 ;
-
-    // Setup poll structure
-    polls.fd     = fd ;
-    polls.events = POLLPRI ;	// Urgent data!
-  }
-  else  {
     if ((fd = sysFds [pin]) == -1)
       return -2 ;
 
     // Setup poll structure
     polls.fd     = fd ;
     polls.events = POLLPRI ;	// Urgent data!
-  }
 
 
 // Wait for it ...
@@ -2634,45 +2592,9 @@ static void *interruptHandler (void *arg)
   myPin   = pinPass ;
   pinPass = -1 ;
 
-  if (  piModel == PI_MODEL_ODROIDC  ||
-	piModel == PI_MODEL_ODROIDC2 ||
-	piModel == PI_MODEL_ODROIDXU_34 )  {
-    int gpioPin, fd_base;
-
-    /**/ if (wiringPiMode == WPI_MODE_UNINITIALISED)
-      return wiringPiFailure (WPI_FATAL, "wiringPiISR: wiringPi has not been initialised. Unable to continue.\n") ;
-    else if (wiringPiMode == WPI_MODE_PINS)
-      gpioPin = pinToGpio [myPin & 63] ;
-    else if (wiringPiMode == WPI_MODE_PHYS)
-      gpioPin = physToGpio [myPin & 63] ;
-    else
-      gpioPin = myPin ;
-
-    if      ( piModel == PI_MODEL_ODROIDC )
-	fd_base = gpioPin < GPIO_PIN_BASE      ? 0 : gpioPin - GPIO_PIN_BASE;
-    else if ( piModel == PI_MODEL_ODROIDC2 )
-	fd_base = gpioPin < C2_GPIOY_PIN_START ? 63: gpioPin - C2_GPIOY_PIN_START;
-    else    {
-        int offset = 0;
-
-        offset = gpioFdOffsetXU34(gpioPin);
-
-        if(offset != -1)
-            fd_base = gpioPin - offset;
-        else
-            fd_base = 63;
-    }
-
-    for (;;)
-      if (waitForInterrupt (myPin, -1) > 0) {
-        isrFunctions [fd_base] () ;
-      }
-  }
-  else  {
     for (;;)
       if (waitForInterrupt (myPin, -1) > 0)
         isrFunctions [myPin] () ;
-  }
 
   return NULL ;
 }
@@ -2761,75 +2683,22 @@ int wiringPiISR (int pin, int mode, void (*function)(void))
 // Now pre-open the /sys/class node - but it may already be open if
 //	we are in Sys mode...
 
-  if      ( piModel == PI_MODEL_ODROIDC || piModel == PI_MODEL_ODROIDC2 )  {
-    int fd_base = 0;
-
-    if (piModel == PI_MODEL_ODROIDC2 )
-	fd_base = bcmGpioPin < C2_GPIOY_PIN_START ? 63: bcmGpioPin - C2_GPIOY_PIN_START;
-    else
-	fd_base = bcmGpioPin < GPIO_PIN_BASE      ? 0 : bcmGpioPin - GPIO_PIN_BASE;
-
-    if (sysFds [fd_base] == -1)
+    if (sysFds [pin] == -1)
     {
       sprintf (fName, "/sys/class/gpio/gpio%d/value", bcmGpioPin) ;
 
-      if ((sysFds [fd_base] = open (fName, O_RDWR)) < 0)
+      if ((sysFds [pin] = open (fName, O_RDWR)) < 0)
         return wiringPiFailure (WPI_FATAL, "wiringPiISR: unable to open %s: %s\n", fName, strerror (errno)) ;
-      sysFdIrqType [fd_base] = mode;
+      sysFdIrqType [pin] = mode;
     }
 
   // Clear any initial pending interrupt
 
-    ioctl (sysFds [fd_base], FIONREAD, &count) ;
+    ioctl (sysFds [pin], FIONREAD, &count) ;
     for (i = 0 ; i < count ; ++i)
-      read (sysFds [fd_base], &c, 1) ;
-
-    sysFdData[fd_base] = c;
-    isrFunctions [fd_base] = function ;
-  }
-  else if ( piModel == PI_MODEL_ODROIDXU_34 )   {
-    int fd_base = 0, offset = 0;
-
-    offset = gpioFdOffsetXU34(bcmGpioPin);
-
-    if(offset != -1)
-        fd_base = bcmGpioPin - offset;
-    else
-        fd_base = 63;
-
-    if (sysFds [fd_base] == -1)
-    {
-      sprintf (fName, "/sys/class/gpio/gpio%d/value", bcmGpioPin) ;
-
-      if ((sysFds [fd_base] = open (fName, O_RDWR)) < 0)
-        return wiringPiFailure (WPI_FATAL, "wiringPiISR: unable to open %s: %s\n", fName, strerror (errno)) ;
-    }
-
-  // Clear any initial pending interrupt
-
-    ioctl (sysFds [fd_base], FIONREAD, &count) ;
-    for (i = 0 ; i < count ; ++i)
-      read (sysFds [fd_base], &c, 1) ;
-
-    sysFdData[fd_base] = c;
-    isrFunctions [fd_base] = function ;
-  }
-  else  {
-    if (sysFds [bcmGpioPin] == -1)
-    {
-      sprintf (fName, "/sys/class/gpio/gpio%d/value", bcmGpioPin) ;
-      if ((sysFds [bcmGpioPin] = open (fName, O_RDWR)) < 0)
-        return wiringPiFailure (WPI_FATAL, "wiringPiISR: unable to open %s: %s\n", fName, strerror (errno)) ;
-    }
-
-  // Clear any initial pending interrupt
-
-    ioctl (sysFds [bcmGpioPin], FIONREAD, &count) ;
-    for (i = 0 ; i < count ; ++i)
-      read (sysFds [bcmGpioPin], &c, 1) ;
+      read (sysFds [pin], &c, 1) ;
 
     isrFunctions [pin] = function ;
-  }
 
   pthread_mutex_lock (&pinMutex) ;
     pinPass = pin ;
