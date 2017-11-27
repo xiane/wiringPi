@@ -68,7 +68,7 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/ioctl.h>
-#include <linux/version.h>
+#include <sys/utsname.h>
 
 #include "softPwm.h"
 #include "softTone.h"
@@ -679,13 +679,8 @@ static int adcFds [2] = {
 #define GPIO_B3_PUD_OFFSET  0x00C8
 #define GPIO_B3_END         214
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,4,0)
-#define piAinNode0_xu   "/sys/devices/platform/soc:/12d10000.adc:/iio:device0/in_voltage0_raw"
-#define piAinNode1_xu   "/sys/devices/platform/soc:/12d10000.adc:/iio:device0/in_voltage3_raw"
-#else
-#define piAinNode0_xu   "/sys/devices/12d10000.adc/iio:device0/in_voltage0_raw"
-#define piAinNode1_xu   "/sys/devices/12d10000.adc/iio:device0/in_voltage3_raw"
-#endif
+static char *piAinNode0_xu;
+static char *piAinNode1_xu;
 
 static int  piModel = PI_MODEL_UNKNOWN;
 
@@ -2913,6 +2908,21 @@ int wiringPiSetup (void)
     adcFds [1] = open (C2_piAinNode1, O_RDONLY) ;
   }
   else if ( model == PI_MODEL_ODROIDXU_34 ) {
+  // Check the kernel version and then set the ADC files
+    struct utsname uname_buf;
+
+    uname(&uname_buf);
+    if (strncmp(uname_buf.release, "4.14", 4) == 0) {
+        piAinNode0_xu = "/sys/devices/platform/soc/12d10000.adc/iio:device0/in_voltage0_raw";
+        piAinNode1_xu = "/sys/devices/platform/soc/12d10000.adc/iio:device0/in_voltage3_raw";
+    } else if (strncmp(uname_buf.release, "4.9", 3) == 0) {
+        piAinNode0_xu = "/sys/devices/platform/soc:/12d10000.adc:/iio:device0/in_voltage0_raw";
+        piAinNode1_xu = "/sys/devices/platform/soc:/12d10000.adc:/iio:device0/in_voltage3_raw";
+    } else { // 3.10 kernel
+        piAinNode0_xu = "/sys/devices/12d10000.adc/iio:device0/in_voltage0_raw";
+        piAinNode1_xu = "/sys/devices/12d10000.adc/iio:device0/in_voltage3_raw";
+    }
+
      pinToGpio =  pinToGpioOdroidXU;
      pin_array_count = ARRAY_SIZE(pinToGpioOdroidXU);
     physToGpio = physToGpioOdroidXU;
@@ -3100,6 +3110,21 @@ int wiringPiSetupSys (void)
     adcFds [1] = open (C2_piAinNode1, O_RDONLY) ;
   }
   else if ( model == PI_MODEL_ODROIDXU_34 ) {
+  // Check the kernel version and then set the ADC files
+    struct utsname uname_buf;
+
+    uname(&uname_buf);
+    if (strncmp(uname_buf.release, "4.14", 4) == 0) {
+        piAinNode0_xu = "/sys/devices/platform/soc/12d10000.adc/iio:device0/in_voltage0_raw";
+        piAinNode1_xu = "/sys/devices/platform/soc/12d10000.adc/iio:device0/in_voltage3_raw";
+    } else if (strncmp(uname_buf.release, "4.9", 3) == 0) {
+        piAinNode0_xu = "/sys/devices/platform/soc:/12d10000.adc:/iio:device0/in_voltage0_raw";
+        piAinNode1_xu = "/sys/devices/platform/soc:/12d10000.adc:/iio:device0/in_voltage3_raw";
+    } else { // 3.10 kernel
+        piAinNode0_xu = "/sys/devices/12d10000.adc/iio:device0/in_voltage0_raw";
+        piAinNode1_xu = "/sys/devices/12d10000.adc/iio:device0/in_voltage3_raw";
+    }
+
      pinToGpio =  pinToGpioOdroidXU ;
      pin_array_count = ARRAY_SIZE(pinToGpioOdroidXU);
     physToGpio = physToGpioOdroidXU ;
