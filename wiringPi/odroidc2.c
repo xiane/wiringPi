@@ -739,9 +739,21 @@ static void init_gpio_mmap (void)
 				"wiringPiSetup: Unable to open /dev/mem: %s\n",
 				strerror (errno)) ;
 	}
+
+#ifdef ANDROID
+#if defined(__aarch64__)
 	//#define ODROIDC2_GPIO_BASE	0xC8834000
-	gpio  = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE,
-				MAP_SHARED, fd, ODROIDC2_GPIO_BASE) ;
+	gpio  = (unsigned long *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, ODROIDC2_GPIO_BASE);
+    msg(MSG_WARN, "%s : compiled for aarch64\n", __func__);
+#else
+	gpio = (unsigned long *)mmap64(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, (off64_t)ODROIDC2_GPIO_BASE);
+	msg(MSG_WARN, "%s : compiled for armeabi-v7a\n", __func__);
+#endif
+#else
+	//#define ODROIDC2_GPIO_BASE	0xC8834000
+	gpio  = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, ODROIDC2_GPIO_BASE);
+    msg(MSG_WARN, "%s : compiled for non Android\n", __func__);
+#endif
 
 	if ((int32_t)gpio == -1)
 		return msg (MSG_ERR,

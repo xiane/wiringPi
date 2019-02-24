@@ -47,6 +47,7 @@ extern int wiringPiDebug ;
 extern void doReadall    (void) ;
 extern void doAllReadall (void) ;
 extern void doPins       (void) ;
+extern void doUnexport (int argc, char *argv []);
 
 #ifndef TRUE
 #  define	TRUE	(1==1)

@@ -10,3 +10,6 @@ gpio/gpio
 *.log
 .DS_Store
 .vscode
+
+libs/
+obj/
