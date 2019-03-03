@@ -686,9 +686,15 @@ static void init_gpio_mmap (void)
 				"wiringPiSetup: Unable to open /dev/mem: %s\n",
 				strerror (errno)) ;
 	}
-	//#define ODROIDXU_GPX_BASE   0xC1108000
+
+#ifdef ANDROID
+	gpio = (unsigned long *)mmap64(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, 
+				MAP_SHARED, fd, (off64_t)ODROIDC1_GPIO_BASE);
+#else
+	//#define ODROIDC1_GPIO_BASE	0xC1108000
 	gpio  = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE,
 				MAP_SHARED, fd, ODROIDC1_GPIO_BASE) ;
+#endif
 
 	if ((int32_t)gpio == -1)
 		return msg (MSG_ERR,
