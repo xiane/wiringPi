@@ -29,7 +29,7 @@
 #include "softTone.h"
 
 /*----------------------------------------------------------------------------*/
-#include "wiringOdroid.h"
+#include "wiringPi.h"
 #include "../version.h"
 
 #include "odroidc1.h"
@@ -111,8 +111,6 @@ static pthread_mutex_t pinMutex ;
 // Debugging & Return codes
 int wiringPiDebug       = FALSE ;
 int wiringPiReturnCodes = FALSE ;
-
-extern void delay (unsigned int howLong) ;
 
 // ODROID Wiring Library
 struct libodroid	libwiring;
