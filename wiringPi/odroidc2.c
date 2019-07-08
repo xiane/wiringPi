@@ -143,7 +143,7 @@ static const int phyToGpio_rev2[64] = {
 const int *pinToGpio, *phyToGpio;
 
 /* ADC file descriptor */
-static char *adcFds[2];
+static int adcFds[2];
 
 /* GPIO mmap control */
 static volatile uint32_t *gpio, *gpio1;
@@ -686,7 +686,7 @@ static int _analogRead (int pin)
 	lseek (adcFds [pin], 0L, SEEK_SET);
 	read  (adcFds [pin], &value[0], 4);
 
-	return	atoi(value);
+	return	atoi((const char*)value);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -729,19 +729,25 @@ static void init_gpio_mmap (void)
 
 	/* GPIO mmap setup */
 	if (access("/dev/gpiomem",0) == 0) {
-		if ((fd = open ("/dev/gpiomem", O_RDWR | O_SYNC | O_CLOEXEC) ) < 0)
-			return msg (MSG_ERR,
-				"wiringPiSetup: Unable to open /dev/gpiomem: %s\n",
-				strerror (errno)) ;
+		if ((fd = open ("/dev/gpiomem", O_RDWR | O_SYNC | O_CLOEXEC) ) < 0) {
+			msg (MSG_ERR,
+					"wiringPiSetup: Unable to open /dev/gpiomem: %s\n",
+					strerror (errno)) ;
+			return;
+		}
 	} else {
-		if (geteuid () != 0)
-			return msg (MSG_ERR,
-				"wiringPiSetup: Must be root. (Did you forget sudo?)\n");
+		if (geteuid () != 0) {
+			msg (MSG_ERR,
+					"wiringPiSetup: Must be root. (Did you forget sudo?)\n");
+			return;
+		}
 	
-		if ((fd = open ("/dev/mem", O_RDWR | O_SYNC | O_CLOEXEC) ) < 0)
-			return msg (MSG_ERR,
-				"wiringPiSetup: Unable to open /dev/mem: %s\n",
-				strerror (errno)) ;
+		if ((fd = open ("/dev/mem", O_RDWR | O_SYNC | O_CLOEXEC) ) < 0) {
+			msg (MSG_ERR,
+					"wiringPiSetup: Unable to open /dev/mem: %s\n",
+					strerror (errno)) ;
+			return;
+		}
 	}
 
 #ifdef ANDROID
@@ -759,10 +765,12 @@ static void init_gpio_mmap (void)
     msg(MSG_WARN, "%s : compiled for non Android\n", __func__);
 #endif
 
-	if ((int32_t)gpio == -1)
-		return msg (MSG_ERR,
-			"wiringPiSetup: mmap (GPIO) failed: %s\n",
-			strerror (errno));
+	if ((int32_t)gpio == -1) {
+		msg (MSG_ERR,
+				"wiringPiSetup: mmap (GPIO) failed: %s\n",
+				strerror (errno));
+		return;
+	}
 }
 
 /*----------------------------------------------------------------------------*/
