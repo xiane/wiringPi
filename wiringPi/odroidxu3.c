@@ -99,7 +99,7 @@ static struct libodroid	*lib = NULL;
 /*----------------------------------------------------------------------------*/
 // Function prototype define
 /*----------------------------------------------------------------------------*/
-static int	gpioToGPSETReg	(int pin);
+static int	gpioToGPSETReg	(int pin) UNU;
 static int	gpioToGPLEVReg	(int pin);
 static int	gpioToPUPDReg	(int pin);
 static int	gpioToShiftReg	(int pin);
@@ -343,10 +343,10 @@ static int _getPadDrive (int pin)
 	int ds, shift;
 
 	if (lib->mode == MODE_GPIO_SYS)
-		return;
+		return	0;
 
 	if ((pin = _getModeToGpio(lib->mode, pin)) < 0)
-		return;
+		return	2;
 
 	ds    = gpioToDSReg(pin);
 	shift = gpioToShiftReg(pin) << 1;
@@ -431,10 +431,10 @@ static int _getPUPD (int pin)
 	int pupd, shift, pull;
 
 	if (lib->mode == MODE_GPIO_SYS)
-		return;
+		return	0;
 
 	if ((pin = _getModeToGpio(lib->mode, pin)) < 0)
-		return;
+		return	2;
 
 	pupd  = gpioToPUPDReg(pin);
 	shift = gpioToShiftReg(pin) << 1;

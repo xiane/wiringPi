@@ -96,7 +96,7 @@ const int *pinToGpio, *phyToGpio;
 static int adcFds[2];
 
 /* GPIO mmap control */
-static volatile uint32_t *gpio, *gpio1;
+static volatile uint32_t *gpio, UNU *gpio1;
 
 /* wiringPi Global library */
 static struct libodroid	*lib = NULL;
@@ -321,10 +321,10 @@ static int _getPadDrive (int pin)
 	int ds, shift;
 
 	if (lib->mode == MODE_GPIO_SYS)
-		return;
+		return	0;
 
 	if ((pin = _getModeToGpio(lib->mode, pin)) < 0)
-		return;
+		return	2;
 
 	ds    = gpioToDSReg(pin);
 	shift = gpioToShiftReg(pin);
@@ -398,10 +398,10 @@ static int _getPUPD (int pin)
 	int puen, pupd, shift;
 
 	if (lib->mode == MODE_GPIO_SYS)
-		return;
+		return	0;
 
 	if ((pin = _getModeToGpio(lib->mode, pin)) < 0)
-		return;
+		return	2;
 
 	puen  = gpioToPUENReg(pin);
 	pupd  = gpioToPUPDReg(pin);
@@ -584,16 +584,16 @@ static void init_gpio_mmap (void)
 #if defined(__aarch64__)
 	//#define ODROIDN2_GPIO_BASE	0xff634000
 	gpio  = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE,
-				MAP_SHARED, fd, ODROIDN2_GPIO_BASE) ;
+				MAP_SHARED, fd, N2_GPIO_BASE) ;
 #else
 	//#define ODROIDN2_GPIO_BASE	0xff634000
-	gpio  = (unsigned long *)mmap64(0, BLOCK_SIZE, PROT_READ|PROT_WRITE,
-				MAP_SHARED, fd, (off64_t)ODROIDN2_GPIO_BASE) ;
+	gpio  = (uint32_t *)mmap64(0, BLOCK_SIZE, PROT_READ|PROT_WRITE,
+				MAP_SHARED, fd, (off64_t)N2_GPIO_BASE) ;
 #endif
 #else
 	//#define ODROIDN2_GPIO_BASE	0xff634000
 	gpio  = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE,
-				MAP_SHARED, fd, ODROIDN2_GPIO_BASE) ;
+				MAP_SHARED, fd, N2_GPIO_BASE) ;
 #endif
 
 	if ((int32_t)gpio == -1) {

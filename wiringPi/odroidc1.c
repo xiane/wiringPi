@@ -485,10 +485,10 @@ static int _getPUPD (int pin)
 	int puen, pupd, shift;
 
 	if (lib->mode == MODE_GPIO_SYS)
-		return;
+		return	0;
 
 	if ((pin = _getModeToGpio(lib->mode, pin)) < 0)
-		return;
+		return	2;
 
 	puen  = gpioToPUENReg(pin);
 	pupd  = gpioToPUPDReg(pin);
@@ -698,8 +698,8 @@ static void init_gpio_mmap (void)
 	}
 
 #ifdef ANDROID
-	gpio = (unsigned long *)mmap64(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, 
-				MAP_SHARED, fd, (off64_t)ODROIDC1_GPIO_BASE);
+	gpio = (uint32_t *)mmap64(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, 
+				MAP_SHARED, fd, (off64_t)C1_GPIO_BASE);
 #else
 	//#define ODROIDC1_GPIO_BASE	0xC1108000
 	gpio  = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE,
